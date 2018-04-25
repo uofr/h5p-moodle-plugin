@@ -89,6 +89,16 @@ $capabilities = array(
             'teacher' => CAP_ALLOW
         )
     ),
+		
+    'mod/hvp:enablegrading' => array(
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_MODULE,
+        'archetypes' => array(
+            'manager' => CAP_ALLOW,
+            'editingteacher' => CAP_ALLOW,
+            'teacher' => CAP_ALLOW
+        )
+    ),
 
     'mod/hvp:saveresults' => array(
         'riskbitmask' => RISK_SPAM,

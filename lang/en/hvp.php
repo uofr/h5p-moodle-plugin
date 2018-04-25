@@ -73,6 +73,9 @@ $string['displayoptions'] = 'Display Options';
 $string['enableframe'] = 'Display action bar and frame';
 $string['enabledownload'] = 'Download button';
 $string['enableembed'] = 'Embed button';
+
+$string['enablegrading'] = 'Display scores in Grader report';
+
 $string['enablecopyright'] = 'Copyright button';
 $string['enableabout'] = 'About H5P button';
 $string['hubsettingsheader'] = 'Content Types';
@@ -207,6 +210,7 @@ $string['hvp:addinstance'] = 'Create new H5P activites';
 $string['hvp:manage'] = 'Edit existing H5P activites';
 $string['hvp:getexport'] = 'Download .h5p file when \'controlled by permission\' option is set';
 $string['hvp:getembedcode'] = 'View H5P embed code when \'controlled by permission\' option is set';
+$string['hvp:enablegrading'] = 'Determine if H5P activity results appear in the Grader report when \'controlled by permission\' option is set';
 $string['hvp:saveresults'] = 'Save the results from completed H5P activities';
 $string['hvp:savecontentuserdata'] = 'Save the users\'s progress for H5P activities';
 $string['hvp:viewresults'] = 'View own results for completed H5P activities';

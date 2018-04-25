@@ -96,6 +96,13 @@ class mod_hvp_mod_form extends moodleform_mod {
                 $mform->setDefault(\H5PCore::DISPLAY_OPTION_EMBED, $displayoptions[\H5PCore::DISPLAY_OPTION_EMBED]);
                 $mform->disabledIf(\H5PCore::DISPLAY_OPTION_EMBED, 'frame');
             }
+						
+            if (isset($displayoptions[\H5PCore::DISPLAY_OPTION_GRADING])) {
+                $mform->addElement('checkbox', \H5PCore::DISPLAY_OPTION_GRADING, get_string('enablegrading', 'hvp'));
+                $mform->setType(\H5PCore::DISPLAY_OPTION_GRADING, PARAM_BOOL);
+                $mform->setDefault(\H5PCore::DISPLAY_OPTION_GRADING, $displayoptions[\H5PCore::DISPLAY_OPTION_GRADING]);
+                //$mform->disabledIf(\H5PCore::DISPLAY_OPTION_GRADING, 'frame');
+            }
 
             if (isset($displayoptions[\H5PCore::DISPLAY_OPTION_COPYRIGHT])) {
                 $mform->addElement('checkbox', \H5PCore::DISPLAY_OPTION_COPYRIGHT, get_string('enablecopyright', 'hvp'));
@@ -138,6 +145,9 @@ class mod_hvp_mod_form extends moodleform_mod {
             }
             if (isset($displayoptions[\H5PCore::DISPLAY_OPTION_EMBED])) {
                 $defaultvalues[\H5PCore::DISPLAY_OPTION_EMBED] = $displayoptions[\H5PCore::DISPLAY_OPTION_EMBED];
+            }
+            if (isset($displayoptions[\H5PCore::DISPLAY_OPTION_GRADING])) {
+                $defaultvalues[\H5PCore::DISPLAY_OPTION_GRADING] = $displayoptions[\H5PCore::DISPLAY_OPTION_GRADING];
             }
             if (isset($displayoptions[\H5PCore::DISPLAY_OPTION_COPYRIGHT])) {
                 $defaultvalues[\H5PCore::DISPLAY_OPTION_COPYRIGHT] = $displayoptions[\H5PCore::DISPLAY_OPTION_COPYRIGHT];

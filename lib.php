@@ -176,6 +176,7 @@ function hvp_get_disabled_content_features($hvp) {
         \H5PCore::DISPLAY_OPTION_FRAME     => isset($hvp->frame) ? $hvp->frame : 0,
         \H5PCore::DISPLAY_OPTION_DOWNLOAD  => isset($hvp->export) ? $hvp->export : 0,
         \H5PCore::DISPLAY_OPTION_EMBED     => isset($hvp->embed) ? $hvp->embed : 0,
+        \H5PCore::DISPLAY_OPTION_GRADING     => isset($hvp->grading) ? $hvp->grading : 0,
         \H5PCore::DISPLAY_OPTION_COPYRIGHT => isset($hvp->copyright) ? $hvp->copyright : 0,
     ];
     $core            = \mod_hvp\framework::instance();
@@ -359,27 +360,34 @@ function hvp_grade_item_update($hvp, $grades=null) {
     }
 
     $params = array('itemname' => $hvp->name, 'idnumber' => $hvp->cmidnumber);
+		
+		
+		if (isset($hvp->grading)&&$hvp->grading==1) {
+			
+	    if (isset($hvp->maximumgrade)) {
+	        $params['gradetype'] = GRADE_TYPE_VALUE;
+	        $params['grademax'] = $hvp->maximumgrade;
+	    }
 
-    if (isset($hvp->maximumgrade)) {
-        $params['gradetype'] = GRADE_TYPE_VALUE;
-        $params['grademax'] = $hvp->maximumgrade;
-    }
+	    // Recalculate rawgrade relative to grademax.
+	    if (isset($hvp->rawgrade) && isset($hvp->rawgrademax) && $hvp->rawgrademax != 0) {
+	        // Get max grade Obs: do not try to use grade_get_grades because it
+	        // requires context which we don't have inside an ajax.
+	        $gradeitem = grade_item::fetch(array(
+	            'itemtype' => 'mod',
+	            'itemmodule' => 'hvp',
+	            'iteminstance' => $hvp->id,
+	            'courseid' => $hvp->course
+	        ));
 
-    // Recalculate rawgrade relative to grademax.
-    if (isset($hvp->rawgrade) && isset($hvp->rawgrademax) && $hvp->rawgrademax != 0) {
-        // Get max grade Obs: do not try to use grade_get_grades because it
-        // requires context which we don't have inside an ajax.
-        $gradeitem = grade_item::fetch(array(
-            'itemtype' => 'mod',
-            'itemmodule' => 'hvp',
-            'iteminstance' => $hvp->id,
-            'courseid' => $hvp->course
-        ));
-
-        if (isset($gradeitem) && isset($gradeitem->grademax)) {
-            $grades->rawgrade = ($hvp->rawgrade / $hvp->rawgrademax) * $gradeitem->grademax;
-        }
-    }
+	        if (isset($gradeitem) && isset($gradeitem->grademax)) {
+	            $grades->rawgrade = ($hvp->rawgrade / $hvp->rawgrademax) * $gradeitem->grademax;
+	        }
+	    }
+			
+		} else {
+			$params['gradetype'] = GRADE_TYPE_NONE;
+		} 
 
     if ($grades === 'reset') {
         $params['reset'] = true;
@@ -398,6 +406,10 @@ function hvp_grade_item_update($hvp, $grades=null) {
  * @param bool $nullifnone If true and the user has no grade then a grade item with rawgrade == null will be inserted
  */
 function hvp_update_grades($hvp=null, $userid=0, $nullifnone=true) {
+		if ($hvp->grading != 1) {
+        return;
+    }
+		
     if ($userid and $nullifnone) {
         $grade = new stdClass();
         $grade->userid   = $userid;

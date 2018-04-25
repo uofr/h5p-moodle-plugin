@@ -1402,6 +1402,9 @@ class framework implements \H5PFrameworkInterface {
             case \H5PPermission::EMBED_H5P:
                 $cmcontext = \context_module::instance($cmid);
                 return has_capability('mod/hvp:getembedcode', $cmcontext);
+            case \H5PPermission::ENABLE_GRADING:
+                $cmcontext = \context_module::instance($cmid);
+                return has_capability('mod/hvp:enablegrading', $cmcontext);
         }
         return false;
     }
