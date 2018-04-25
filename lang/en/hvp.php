@@ -349,3 +349,6 @@ $string['licenseversion'] = 'License Version';
 
 // Embed.
 $string['embedloginfailed'] = 'You do not have access to this content. Try logging in.';
+
+$string['hvpresults'] = 'H5P Results';
+$string['resultsfor'] = 'Results for';
