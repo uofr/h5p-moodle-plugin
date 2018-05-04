@@ -74,7 +74,7 @@ $string['enableframe'] = 'Display action bar and frame';
 $string['enabledownload'] = 'Download button';
 $string['enableembed'] = 'Embed button';
 
-$string['enablegrading'] = 'Display scores in Grader report';
+$string['enablegrading'] = 'Include scores in Grader report';
 
 $string['enablecopyright'] = 'Copyright button';
 $string['enableabout'] = 'About H5P button';
