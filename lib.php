@@ -430,13 +430,40 @@ function hvp_update_grades($hvp=null, $userid=0, $nullifnone=true) {
  * @throws coding_exception
  */
 function hvp_extend_settings_navigation(settings_navigation $settingsnav, navigation_node $navnode = null) {
-    global $PAGE;
+    global $PAGE, $COURSE, $DB;
+		// check if the grader report is enabled so we can show the grade report link if grading is enabled
+    
+		$hvp = $DB->get_record('hvp', array('id' => $PAGE->cm->instance));
+    
+		$core = \mod_hvp\framework::instance();
+		$displayoptions = $core->getDisplayOptionsForView($hvp->disable, $PAGE->cm->instance);
+								
+		if (has_capability('mod/hvp:enablegrading', $PAGE->cm->context) &&
+        $PAGE->cm->context->contextlevel === CONTEXT_MODULE &&
+        $PAGE->course && $PAGE->course->id !== 1 && $displayoptions[\H5PCore::DISPLAY_OPTION_GRADING] == 1) {
+        // Only add this settings item on non-site course pages.
+        if ($settingnode = $settingsnav->find('modulesettings', \settings_navigation::TYPE_SETTING)) {
+           
+					  
+			    // Link to gradebook.
+			    if (has_capability('gradereport/grader:view', $PAGE->cm->context) 
+							&& has_capability('moodle/grade:viewall', $PAGE->cm->context)) {
+								
+			        	$link = new moodle_url('/grade/report/grader/index.php', array('id' => $COURSE->id));
+			        	$linkname = get_string('viewgradebook', 'assign');//.'|'.$displayoptions[\H5PCore::DISPLAY_OPTION_GRADING];//debugging
+			        	$node = $navnode->add($linkname, $link, navigation_node::TYPE_SETTING);
+			    }
+						
+            //$settingnode->add_node($navnode);
+        }
+    }
+		
     if (has_capability('moodle/course:manageactivities', $PAGE->cm->context) &&
         $PAGE->cm->context->contextlevel === CONTEXT_MODULE &&
         $PAGE->course && $PAGE->course->id !== 1) {
         // Only add this settings item on non-site course pages.
         if ($settingnode = $settingsnav->find('modulesettings', \settings_navigation::TYPE_SETTING)) {
-            $strgrades = get_string('hvpresults', 'hvp');
+            $strgrades = get_string('hvpresults', 'hvp');//.'|'.$PAGE->cm->instance;//debugging
             $url = new \moodle_url('/mod/hvp/grade.php',
                 ['id' => $PAGE->cm->context->instanceid]);
             $hvpgradesnode = \navigation_node::create(
