@@ -112,7 +112,7 @@ class mod_hvp_mod_form extends moodleform_mod {
         // Max grade.
         $mform->addElement('text', 'maximumgrade', get_string('maximumgrade', 'hvp'));
         $mform->setType('maximumgrade', PARAM_INT);
-        $mform->setDefault('maximumgrade', 10);
+        $mform->setDefault('maximumgrade', 0);
 
         // Standard course module settings.
         $this->standard_coursemodule_elements();

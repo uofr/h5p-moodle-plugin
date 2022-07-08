@@ -90,7 +90,13 @@ function hvp_add_instance($hvp) {
     $hvp->id = hvp_save_content($hvp);
 
     // Set and create grade item.
+   
     hvp_grade_item_update($hvp);
+    // ---- uofr hack dapiawej
+    if ($hvp->maximumgrade <=0) {
+        hvp_remove_grade_item($hvp);
+        }
+        //---end of hack --
 
     if (class_exists('\core_completion\api')) {
         $completiontimeexpected = !empty($hvp->completionexpected) ? $hvp->completionexpected : null;
@@ -115,9 +121,13 @@ function hvp_update_instance($hvp) {
     $hvp->id = $hvp->instance;
 
     // Save content.
+   
     hvp_save_content($hvp);
     
+    // update grade item.
     hvp_grade_item_update($hvp);
+       
+    
 
     if (class_exists('\core_completion\api')) {
         $completiontimeexpected = !empty($hvp->completionexpected) ? $hvp->completionexpected : null;
@@ -184,34 +194,7 @@ function hvp_remove_grade_item($hvp, $grades=null) {
            if (!function_exists('grade_update')) { // Workaround for buggy PHP versions.
             require_once($CFG->libdir . '/gradelib.php');
         }
-        
-        $params = array('itemname' => $hvp->name, 'idnumber' => $hvp->cmidnumber);
-        
-        if (isset($hvp->maximumgrade)) {
-            $params['gradetype'] = GRADE_TYPE_VALUE;
-            $params['grademax'] = $hvp->maximumgrade;
-        }
-             // Recalculate rawgrade relative to grademax.
-             if (isset($hvp->rawgrade) && isset($hvp->rawgrademax) && $hvp->rawgrademax != 0) {
-                // Get max grade Obs: do not try to use grade_get_grades because it
-                // requires context which we don't have inside an ajax.
-                $gradeitem = grade_item::fetch(array(
-                    'itemtype' => 'mod',
-                    'itemmodule' => 'hvp',
-                    'iteminstance' => $hvp->id,
-                    'courseid' => $hvp->course
-                ));
-        
-                if (isset($gradeitem) && isset($gradeitem->grademax)) {
-                    $grades->rawgrade = ($hvp->rawgrade / $hvp->rawgrademax) * $gradeitem->grademax;
-                }
-            }
-           if ($grades === 'reset') {
-            $params['reset'] = true;
-            $grades = null;
-        }
-        
-        
+ 
         return grade_update('mod/hvp', $hvp->course, 'mod', 'hvp',
         $hvp->id, 0, null, ['deleted' => 1]);
         
@@ -429,12 +412,13 @@ function hvp_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload
 function hvp_grade_item_update($hvp, $grades=null) {
     global $CFG;
 
-    // uofr hack dapiawej-----------------------
-    if ($hvp->maximumgrade <=0) {
+  // uofr hack dapiawej-----------------------
+  if ($hvp->maximumgrade <=0) {
     hvp_remove_grade_item($hvp);
-    }else {
-    //---- end of hack----------------
-
+   
+    } else {
+ //---end of hack---------------------
+    
     if (!function_exists('grade_update')) { // Workaround for buggy PHP versions.
         require_once($CFG->libdir . '/gradelib.php');
     }
@@ -468,7 +452,7 @@ function hvp_grade_item_update($hvp, $grades=null) {
     }
 
     return grade_update('mod/hvp', $hvp->course, 'mod', 'hvp', $hvp->id, 0, $grades, $params);
-}
+    }
 }
 
 /**
