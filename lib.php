@@ -475,6 +475,37 @@ function hvp_update_grades($hvp=null, $userid=0, $nullifnone=true) {
     }
 }
 
+/** uofr hack */
+
+function hvp_extend_settings_navigation(settings_navigation $settingsnav, navigation_node $navnode = null) {
+    global $PAGE;
+    if (has_capability('moodle/course:manageactivities', $PAGE->cm->context) &&
+        $PAGE->cm->context->contextlevel === CONTEXT_MODULE &&
+        $PAGE->course && $PAGE->course->id !== 1) {
+        // Only add this settings item on non-site course pages.
+        if ($settingnode = $settingsnav->find('modulesettings', \settings_navigation::TYPE_SETTING)) {
+            $strgrades = get_string('h5p_results', 'hvp');
+            $url = new \moodle_url('/mod/hvp/grade.php',
+                ['id' => $PAGE->cm->context->instanceid]);
+            $hvpgradesnode = \navigation_node::create(
+                $strgrades,
+                $url,
+                \navigation_node::NODETYPE_LEAF,
+                'hvp',
+                'hvp',
+                new \pix_icon('i/report', $strgrades)
+            );
+            if ($PAGE->url->compare($url, URL_MATCH_BASE)) {
+                $hvpgradesnode->make_active();
+            }
+            $settingnode->add_node($hvpgradesnode);
+        }
+    }
+}
+
+//-------end of hack --------
+
+
 /**
  * Obtains the automatic completion state for this H5P activity on any conditions
  * in settings, such as if a certain grade is achieved.
