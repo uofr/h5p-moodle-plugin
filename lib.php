@@ -88,15 +88,15 @@ function hvp_supports($feature) {
 function hvp_add_instance($hvp) {
     // Save content.
     $hvp->id = hvp_save_content($hvp);
-
-    // Set and create grade item.
    
-    hvp_grade_item_update($hvp);
     // ---- uofr hack dapiawej
     if ($hvp->maximumgrade <=0) {
         hvp_remove_grade_item($hvp);
-        }
-        //---end of hack --
+    }else {
+         // Set and create grade item.
+            hvp_grade_item_update($hvp);
+    }
+        
 
     if (class_exists('\core_completion\api')) {
         $completiontimeexpected = !empty($hvp->completionexpected) ? $hvp->completionexpected : null;
@@ -124,9 +124,14 @@ function hvp_update_instance($hvp) {
    
     hvp_save_content($hvp);
     
-    // update grade item.
-    hvp_grade_item_update($hvp);
-       
+     // ---- uofr hack dapiawej
+    if ($hvp->maximumgrade <=0) {
+        hvp_remove_grade_item($hvp);
+    }else {
+            // update grade item.
+        hvp_grade_item_update($hvp);
+    }
+    //---end of hack --   
     
 
     if (class_exists('\core_completion\api')) {
@@ -193,7 +198,7 @@ function hvp_remove_grade_item($hvp, $grades=null) {
 
            if (!function_exists('grade_update')) { // Workaround for buggy PHP versions.
             require_once($CFG->libdir . '/gradelib.php');
-        }
+           }
  
         return grade_update('mod/hvp', $hvp->course, 'mod', 'hvp',
         $hvp->id, 0, null, ['deleted' => 1]);
@@ -411,13 +416,6 @@ function hvp_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload
  */
 function hvp_grade_item_update($hvp, $grades=null) {
     global $CFG;
-
-  // uofr hack dapiawej-----------------------
-  if ($hvp->maximumgrade <=0) {
-    hvp_remove_grade_item($hvp);
-   
-    } else {
- //---end of hack---------------------
     
     if (!function_exists('grade_update')) { // Workaround for buggy PHP versions.
         require_once($CFG->libdir . '/gradelib.php');
@@ -452,7 +450,7 @@ function hvp_grade_item_update($hvp, $grades=null) {
     }
 
     return grade_update('mod/hvp', $hvp->course, 'mod', 'hvp', $hvp->id, 0, $grades, $params);
-    }
+    //}
 }
 
 /**
