@@ -88,9 +88,15 @@ function hvp_supports($feature) {
 function hvp_add_instance($hvp) {
     // Save content.
     $hvp->id = hvp_save_content($hvp);
-
-    // Set and create grade item.
-    hvp_grade_item_update($hvp);
+   
+    // ---- uofr hack dapiawej
+    if ($hvp->maximumgrade <=0) {
+        hvp_remove_grade_item($hvp);
+    }else {
+         // Set and create grade item.
+            hvp_grade_item_update($hvp);
+    }
+        
 
     if (class_exists('\core_completion\api')) {
         $completiontimeexpected = !empty($hvp->completionexpected) ? $hvp->completionexpected : null;
@@ -115,8 +121,18 @@ function hvp_update_instance($hvp) {
     $hvp->id = $hvp->instance;
 
     // Save content.
+   
     hvp_save_content($hvp);
-    hvp_grade_item_update($hvp);
+    
+     // ---- uofr hack dapiawej
+    if ($hvp->maximumgrade <=0) {
+        hvp_remove_grade_item($hvp);
+    }else {
+            // update grade item.
+        hvp_grade_item_update($hvp);
+    }
+    //---end of hack --   
+    
 
     if (class_exists('\core_completion\api')) {
         $completiontimeexpected = !empty($hvp->completionexpected) ? $hvp->completionexpected : null;
@@ -174,6 +190,23 @@ function hvp_save_content($hvp) {
 
     return $hvp->id;
 }
+
+# Uofr hack dapiawej ------------------------
+function hvp_remove_grade_item($hvp, $grades=null) {
+    global $CFG;
+    if ($hvp->maximumgrade <=0) {
+
+           if (!function_exists('grade_update')) { // Workaround for buggy PHP versions.
+            require_once($CFG->libdir . '/gradelib.php');
+           }
+ 
+        return grade_update('mod/hvp', $hvp->course, 'mod', 'hvp',
+        $hvp->id, 0, null, ['deleted' => 1]);
+        
+    }
+}
+// end of hack ----------------------
+
 
 /**
  * Removes an instance of the hvp from the database
@@ -383,7 +416,7 @@ function hvp_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload
  */
 function hvp_grade_item_update($hvp, $grades=null) {
     global $CFG;
-
+    
     if (!function_exists('grade_update')) { // Workaround for buggy PHP versions.
         require_once($CFG->libdir . '/gradelib.php');
     }
@@ -417,6 +450,7 @@ function hvp_grade_item_update($hvp, $grades=null) {
     }
 
     return grade_update('mod/hvp', $hvp->course, 'mod', 'hvp', $hvp->id, 0, $grades, $params);
+    //}
 }
 
 /**
@@ -438,6 +472,37 @@ function hvp_update_grades($hvp=null, $userid=0, $nullifnone=true) {
         hvp_grade_item_update($hvp);
     }
 }
+
+/** uofr hack */
+
+function hvp_extend_settings_navigation(settings_navigation $settingsnav, navigation_node $navnode = null) {
+    global $PAGE;
+    if (has_capability('moodle/course:manageactivities', $PAGE->cm->context) &&
+        $PAGE->cm->context->contextlevel === CONTEXT_MODULE &&
+        $PAGE->course && $PAGE->course->id !== 1) {
+        // Only add this settings item on non-site course pages.
+        if ($settingnode = $settingsnav->find('modulesettings', \settings_navigation::TYPE_SETTING)) {
+            $strgrades = get_string('h5p_results', 'hvp');
+            $url = new \moodle_url('/mod/hvp/grade.php',
+                ['id' => $PAGE->cm->context->instanceid]);
+            $hvpgradesnode = \navigation_node::create(
+                $strgrades,
+                $url,
+                \navigation_node::NODETYPE_LEAF,
+                'hvp',
+                'hvp',
+                new \pix_icon('i/report', $strgrades)
+            );
+            if ($PAGE->url->compare($url, URL_MATCH_BASE)) {
+                $hvpgradesnode->make_active();
+            }
+            $settingnode->add_node($hvpgradesnode);
+        }
+    }
+}
+
+//-------end of hack --------
+
 
 /**
  * Obtains the automatic completion state for this H5P activity on any conditions

@@ -82,6 +82,10 @@ $title = get_string('gradeheading', 'hvp', $hvp->title);
 $PAGE->set_title($title);
 $PAGE->set_heading($course->fullname);
 
+// ---- uofr hack 
+$title = get_string('h5p_resultsfor','hvp') . " {$hvp->title}";
+//---end of hack
+
 // List all results for specific content.
 $dataviewid = 'h5p-results';
 

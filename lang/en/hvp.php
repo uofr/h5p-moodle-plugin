@@ -393,6 +393,11 @@ $string['authorcommentsdescription'] = 'Comments for the editor of the content (
 // Embed.
 $string['embedloginfailed'] = 'You do not have access to this content. Try logging in.';
 
+// link results uofr hack
+$string['h5p_results'] = 'H5P Results';
+$string['h5p_resultsfor'] = 'Results for';
+
+
 // Privacy.
 $string['privacy:metadata:core_files'] = 'The H5P activity stores files which have been uploaded as part of H5P content.';
 $string['privacy:metadata:core_grades'] = 'The H5P activity stores grades of users that have answered H5P content.';
