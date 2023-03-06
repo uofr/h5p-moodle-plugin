@@ -58,6 +58,9 @@ $PAGE->requires->css(new moodle_url(\mod_hvp\view_assets::getsiteroot() . '/mod/
 
 // Print page HTML.
 echo $OUTPUT->header();
+
+// if lower version of moodle then use this heading - fix for dual description issue in Moodle 4 versions.
+if ($CFG->branch < 400) {
 echo $OUTPUT->heading(format_string($content['title']));
 echo '<div class="clearer"></div>';
 
@@ -70,7 +73,7 @@ if (trim(strip_tags($content['intro'], '<img>'))) {
     ), $cm->id);
     echo $OUTPUT->box_end();
 }
-
+}
 $hashub = (has_capability('mod/hvp:share', $context) && !empty(get_config('mod_hvp', 'site_uuid')) && !empty(get_config('mod_hvp', 'hub_secret')));
 $isshared = $content['shared'] === '1';
 $huboptionsdata = array(
