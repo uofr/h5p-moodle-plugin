@@ -1,131 +1,78 @@
-// H5P iframe Resizer
-(function () {
-  if (!window.postMessage || !window.addEventListener || window.h5pResizerInitialized) {
-    return; // Not supported
-  }
-  window.h5pResizerInitialized = true;
+//UOFR Hack Custom H5P resizer
+//First find all iframes that contain "mod/hvp/embed.php" in the src attribute
+var iframes = document.querySelectorAll('iframe[src*="mod/hvp/embed.php"]');
 
-  // Map actions to handlers
-  var actionHandlers = {};
+// Create an array to store the original height of each iframe
+var originalHeights = [];
 
-  /**
-   * Prepare iframe resize.
-   *
-   * @private
-   * @param {Object} iframe Element
-   * @param {Object} data Payload
-   * @param {Function} respond Send a response to the iframe
-   */
-  actionHandlers.hello = function (iframe, data, respond) {
-    // Make iframe responsive
-    iframe.style.width = '100%';
+// Loop through each iframe and add the custom class and store the original height
+for (var i = 0; i < iframes.length; i++) {
+  var iframe = iframes[i];
+  iframe.classList.add('h5p-custom-class');
+  //originalHeights.push(iframe.offsetHeight);
+}
 
-    // Bugfix for Chrome: Force update of iframe width. If this is not done the
-    // document size may not be updated before the content resizes.
-    iframe.getBoundingClientRect();
-
-    // Tell iframe that it needs to resize when our window resizes
-    var resize = function () {
-      if (iframe.contentWindow) {
-        // Limit resize calls to avoid flickering
-        respond('resize');
-      }
-      else {
-        // Frame is gone, unregister.
-        window.removeEventListener('resize', resize);
-      }
-    };
-    window.addEventListener('resize', resize, false);
-
-    // Respond to let the iframe know we can resize it
-    respond('hello');
-  };
-
-  /**
-   * Prepare iframe resize.
-   *
-   * @private
-   * @param {Object} iframe Element
-   * @param {Object} data Payload
-   * @param {Function} respond Send a response to the iframe
-   */
-  actionHandlers.prepareResize = function (iframe, data, respond) {
-    // Do not resize unless page and scrolling differs
-    if (iframe.clientHeight !== data.scrollHeight ||
-        data.scrollHeight !== data.clientHeight) {
-
-      // Reset iframe height, in case content has shrinked.
-      iframe.style.height = data.clientHeight + 'px';
-      respond('resizePrepared');
-    }
-  };
-
-  /**
-   * Resize parent and iframe to desired height.
-   *
-   * @private
-   * @param {Object} iframe Element
-   * @param {Object} data Payload
-   * @param {Function} respond Send a response to the iframe
-   */
-  actionHandlers.resize = function (iframe, data) {
-    // Resize iframe so all content is visible. Use scrollHeight to make sure we get everything
-    iframe.style.height = data.scrollHeight + 'px';
-  };
-
-  /**
-   * Keyup event handler. Exits full screen on escape.
-   *
-   * @param {Event} event
-   */
-  var escape = function (event) {
-    if (event.keyCode === 27) {
-      exitFullScreen();
-    }
-  };
-
-  // Listen for messages from iframes
-  window.addEventListener('message', function receiveMessage(event) {
-    if (event.data.context !== 'h5p') {
-      return; // Only handle h5p requests.
-    }
-
-    // Find out who sent the message
-    var iframe, iframes = document.getElementsByTagName('iframe');
-    for (var i = 0; i < iframes.length; i++) {
-      if (iframes[i].contentWindow === event.source) {
-        iframe = iframes[i];
+var iframes = document.querySelectorAll('iframe');
+for (var i = 0; i < iframes.length; i++) {
+  const iframe = iframes[i];
+// Add a load event listener that will wait for all the dom elements, 1st to load.
+window.addEventListener('load', function() {
+  //Use Mutation observer since (message API eventlistener) is not reliable to resize the iframe.
+  //which can lead to performance problems and unexpected behavior.
+  const newObserver = new MutationObserver(function(mutationsList, observer) {
+    for(var mutation of mutationsList) {
+      if (mutation.type === 'childList') {
+        // User has interacted with iframe content
+        console.log('User interacted with iframe content');
+        break;
+      } else if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+        // A div inside the iframe has been resized
+        resizeIframes();
+        console.log('H5P iframe has been resized to the correct value');
         break;
       }
     }
+  });
 
-    if (!iframe) {
-      return; // Cannot find sender
-    }
+  newObserver.observe(iframe.contentWindow.document, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+});
+}
 
-    // Find action handler handler
-    if (actionHandlers[event.data.action]) {
-      actionHandlers[event.data.action](iframe, event.data, function respond(action, data) {
-        if (data === undefined) {
-          data = {};
-        }
-        data.action = action;
-        data.context = 'h5p';
-        event.source.postMessage(data, event.origin);
-      });
-    }
-  }, false);
 
-  // Let h5p iframes know we're ready!
-  var iframes = document.getElementsByTagName('iframe');
-  var ready = {
-    context: 'h5p',
-    action: 'ready'
-  };
+// Resize all H5P iframes, we are not going to use (message API eventlistener) is not reliable to resize the iframe and avoid flikering.
+function resizeIframes() {
+  // Loop through each iframe with the custom class
+  var iframes = document.querySelectorAll('.h5p-custom-class');
   for (var i = 0; i < iframes.length; i++) {
-    if (iframes[i].src.indexOf('h5p') !== -1) {
-      iframes[i].contentWindow.postMessage(ready, '*');
-    }
-  }
+    var iframe = iframes[i];
+    console.log('Iframe ready:', iframe);
 
-})();
+    // Set iframe height based on content
+    const elements = iframe.contentWindow.document.querySelectorAll('.completion-info');
+    for (let i = 0; i < elements.length; i++) {
+      elements[i].style.display = "none";
+    }
+    var sectionEmbed = iframe.contentWindow.document.querySelector('.embedded-main');
+    var sectionHeight = sectionEmbed.offsetHeight;
+    //console.log('Section height:', sectionHeight);
+    var newHeightWithExtra = sectionHeight + 30;
+    originalHeights[i] = newHeightWithExtra;
+    iframe.style.height = newHeightWithExtra + 'px';
+    iframe.style.width = '100%';
+    console.log('Result - Iframe height + Section height:', newHeightWithExtra);
+
+  }
+ 
+}
+
+window.addEventListener('load', function() {
+  // Resize all H5P iframes immediately
+  resizeIframes();
+
+  //Just in case Set a timeout to attempt resizing again after a certain period of time
+  setTimeout(function() {
+    resizeIframes();
+  }, 1000);
+
+  console.log('Custom iframe resizing code loaded.');
+});
