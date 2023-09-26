@@ -109,10 +109,26 @@ class mod_hvp_mod_form extends moodleform_mod {
         $this->standard_grading_coursemodule_elements();
         $mform->removeElement('grade');
 
+        //dapiawej Friday, September 22, 2023
+        //if I want to use a checkbox instead of mform->select
+        //$mform->addElement('advcheckbox', 'gradetypo', get_string('gradercstom', 'hvp'), 'Hide grade', array('group' => 1));
+        //$mform->addHelpButton('gradetypo', 'gradetype', 'hvp');
+        //$mform->setDefault('gradetypo', 0);
+        //$mform->setType('gradetypo', PARAM_INT);
+
+       //dapiawej Saturday September 23, 2023 add additional form(mform->select) to have an option to hide H5p grade in the gradebook.
+        $choices = array();
+        $choices[0] =  get_string('gradehidden', 'hvp');
+        $choices[1] = get_string('gradeshow','hvp');
+        $mform->addElement('select',  'gradetypo',  get_string('gradercstom', 'hvp'),  $choices);
+        $mform->addHelpButton('gradetypo', 'gradetype', 'hvp');
+        $mform->setDefault('gradetypo', '1');
+        //-----end of hack
+
         // Max grade.
         $mform->addElement('text', 'maximumgrade', get_string('maximumgrade', 'hvp'));
         $mform->setType('maximumgrade', PARAM_INT);
-        $mform->setDefault('maximumgrade', 10);
+        $mform->setDefault('maximumgrade', 0);
 
         // Standard course module settings.
         $this->standard_coursemodule_elements();
@@ -151,6 +167,37 @@ class mod_hvp_mod_form extends moodleform_mod {
      * @param $content
      * @param $defaultvalues
      */
+
+     private function set_gradetype($content, &$defaultvalues) {
+        // Set default maxgrade.
+        if (isset($content) && isset($content['id'])
+            && isset($defaultvalues) && isset($defaultvalues['course'])) {
+
+            // Get the gradeitem and set maxgrade.
+            $gradeitem = grade_item::fetch(array(
+                'itemtype' => 'mod',
+                'itemmodule' => 'hvp',
+                'iteminstance' => $content['id'],
+                'courseid' => $defaultvalues['course']
+            ));
+
+            if (isset($gradeitem) && isset($gradeitem->grademax)) {
+                /*option for checkbox forms if enabled
+                if ($gradeitem->gradetype == 0) {
+                    feature for checkbox
+                    $defaultvalues['gradetypo'] = 1;
+                }else {
+                    $defaultvalues['gradetypo'] = 0;
+                }*/
+                
+                $defaultvalues['gradetypo'] = $gradeitem->gradetype;
+                
+            }
+           
+
+        }
+    }
+
     private function set_max_grade($content, &$defaultvalues) {
         // Set default maxgrade.
         if (isset($content) && isset($content['id'])
@@ -166,7 +213,9 @@ class mod_hvp_mod_form extends moodleform_mod {
 
             if (isset($gradeitem) && isset($gradeitem->grademax)) {
                 $defaultvalues['maximumgrade'] = $gradeitem->grademax;
+                
             }
+        
         }
     }
 
@@ -179,9 +228,10 @@ class mod_hvp_mod_form extends moodleform_mod {
             // Load Content.
             $content = $core->loadContent($defaultvalues['id']);
         }
-
+        //$this->set_gradetype($content, &$defaultvalues);
+        $this->set_gradetype($content, $defaultvalues);
         $this->set_max_grade($content, $defaultvalues);
-
+       
         // Aaah.. we meet again h5pfile!
         $draftitemid = file_get_submitted_draft_itemid('h5pfile');
         file_prepare_draft_area($draftitemid, $this->context->id, 'mod_hvp', 'package', 0);
@@ -324,9 +374,9 @@ class mod_hvp_mod_form extends moodleform_mod {
 
         // Validate max grade as a non-negative numeric value.
         if (!is_numeric($data['maximumgrade']) || $data['maximumgrade'] < 0) {
-            $errors['maximumgrade'] = get_string('maximumgradeerror', 'hvp');
+           $errors['maximumgrade'] = get_string('maximumgradeerror', 'hvp');
         }
-
+       
         if ($data['h5paction'] === 'upload') {
             // Validate uploaded H5P file.
             unset($errors['name']); // Will be set in data_postprocessing().
@@ -346,7 +396,7 @@ class mod_hvp_mod_form extends moodleform_mod {
                 }
             }
         }
-
+ 
         return $errors;
     }
 
@@ -359,7 +409,8 @@ class mod_hvp_mod_form extends moodleform_mod {
      * @param stdClass $data passed by reference
      */
     public function data_postprocessing($data) {
-        // Determine disabled content features.
+        
+   
         $options = array(
             H5PCore::DISPLAY_OPTION_FRAME     => isset($data->frame) ? $data->frame : 0,
             H5PCore::DISPLAY_OPTION_DOWNLOAD  => isset($data->export) ? $data->export : 0,

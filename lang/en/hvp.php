@@ -25,6 +25,13 @@ You add interactive H5P content by creating content using the built-in authoring
 $string['modulename_link'] = 'https://h5p.org/moodle-more-help';
 $string['modulenameplural'] = 'Interactive Content';
 $string['pluginadministration'] = 'H5P';
+$string['gradercstom'] = 'Grade visibility';
+$string['gradercstomdesc'] = 'If this feature is enabled, grades will not be visible in the gradebook';
+$string['gradetype'] = 'grade visibility in the gradebook'; 
+$string['gradetype_help'] = '* Show: The grade for the H5P activity will be displayed in the gradebook.
+* Hide: The grade for H5P activity will be hidden in the gradebook.';
+$string['gradehidden'] = 'Hide';
+$string['gradeshow'] = 'Show';
 $string['pluginname'] = 'H5P';
 $string['intro'] = 'Introduction';
 $string['h5pfile'] = 'H5P File';

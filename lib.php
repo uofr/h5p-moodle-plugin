@@ -68,8 +68,7 @@ function hvp_supports($feature) {
             return true;
         case FEATURE_SHOW_DESCRIPTION:
             return true;
-        case FEATURE_MOD_PURPOSE:
-            return MOD_PURPOSE_CONTENT;
+
         default:
             return null;
     }
@@ -91,7 +90,9 @@ function hvp_add_instance($hvp) {
     $hvp->id = hvp_save_content($hvp);
 
     // Set and create grade item.
+    hvp_save_content($hvp);
     hvp_grade_item_update($hvp);
+    // set_grade_item_none($hvp);
 
     if (class_exists('\core_completion\api')) {
         $completiontimeexpected = !empty($hvp->completionexpected) ? $hvp->completionexpected : null;
@@ -118,7 +119,8 @@ function hvp_update_instance($hvp) {
     // Save content.
     hvp_save_content($hvp);
     hvp_grade_item_update($hvp);
-
+    // set_grade_item_none($hvp);
+  
     if (class_exists('\core_completion\api')) {
         $completiontimeexpected = !empty($hvp->completionexpected) ? $hvp->completionexpected : null;
         \core_completion\api::update_completion_date_event($hvp->coursemodule, 'hvp', $hvp->id, $completiontimeexpected);
@@ -126,6 +128,25 @@ function hvp_update_instance($hvp) {
 
     return true;
 }
+
+
+# Uofr hack dapiawej ------------------------
+function set_grade_item_none($hvp, $grades=null) {
+    global $CFG;
+    $item = [];
+    $item['gradetype'] = GRADE_TYPE_NONE;
+        
+           if (!function_exists('grade_update')) { // Workaround for buggy PHP versions.
+            require_once($CFG->libdir . '/gradelib.php');
+           }
+
+           if ($grades === 'reset') {
+            $params['reset'] = true;
+            $grades = null;
+        }
+        return grade_update('mod/hvp', $hvp->course, 'mod', 'hvp',$hvp->id, 0,$grades, $item);
+}
+// end of hack ----------------------
 
 /**
  * Does the actual process of saving the H5P content that's submitted through
@@ -391,10 +412,17 @@ function hvp_grade_item_update($hvp, $grades=null) {
 
     $params = array('itemname' => $hvp->name, 'idnumber' => $hvp->cmidnumber);
 
-    if (isset($hvp->maximumgrade)) {
-        $params['gradetype'] = GRADE_TYPE_VALUE;
+    //dapiawaej
+    if (isset($hvp->maximumgrade)) { 
         $params['grademax'] = $hvp->maximumgrade;
     }
+   
+    if ( isset($hvp->gradetypo) && $hvp->gradetypo == 0) {
+         $params['gradetype'] = GRADE_TYPE_NONE; 
+    }else {
+        $params['gradetype'] = GRADE_TYPE_VALUE;
+    }
+    //----end of hack
 
     // Recalculate rawgrade relative to grademax.
     if (isset($hvp->rawgrade) && isset($hvp->rawgrademax) && $hvp->rawgrademax != 0) {
@@ -517,30 +545,3 @@ function mod_hvp_core_calendar_provide_event_action(calendar_event $event, actio
     );
 }
 
-function hvp_get_coursemodule_info($coursemodule) {
-    global $DB, $PAGE;
-        
-    $defaulturl = null;
-        
-    $info = new cached_cm_info();
-        
-    $modtype = $DB->get_field_sql('SELECT main_library_id FROM {hvp} WHERE id = ?', array($coursemodule->instance));
-    $result = $DB->get_record_sql('SELECT has_icon, machine_name, major_version, minor_version FROM {hvp_libraries} WHERE id = ?', array($modtype));
-        
-    if ($result->has_icon) {
-        $info->iconurl = new moodle_url('/theme/urcourses_default/pix_plugins/mod/hvp/types/'.substr($result->machine_name,4).'/icon.svg');
-    } else {
-        $result2 = $DB->get_record_sql('SELECT has_icon, machine_name, major_version, minor_version FROM {hvp_libraries} WHERE has_icon = ? AND machine_name = ?', array('1', $result->machine_name));
-        if ($result2) {
-            $info->iconurl = new moodle_url('/theme/urcourses_default/pix_plugins/mod/hvp/types/'.substr($result2->machine_name,4).'/icon.svg');
-            //$PAGE->theme->image_url('types/'.substr($result2->machine_name,4).'/icon','mod_hvp');
-        }
-    }
-    
-    if ($info->iconurl === null) {
-        $info->iconurl = $defaulturl;
-    }
-    $info->name = $coursemodule->name;
-
-   return $info;
-}
