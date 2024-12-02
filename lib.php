@@ -413,16 +413,16 @@ function hvp_grade_item_update($hvp, $grades=null) {
     }
 
     $params = array('itemname' => $hvp->name, 'idnumber' => $hvp->cmidnumber);
-
-    //dapiawaej
+    
+    //dapiawaej December 2, 2024
     if (isset($hvp->maximumgrade)) { 
         $params['grademax'] = $hvp->maximumgrade;
     }
-   
-    if ( isset($hvp->gradetypo) && $hvp->gradetypo == 0) {
-         $params['gradetype'] = GRADE_TYPE_NONE; 
-    }else {
-        $params['gradetype'] = GRADE_TYPE_VALUE;
+
+    if (isset($hvp->gradetypo)) {
+        //ensures that the grade visibility setting (hide/show) is respected and will not be automatically reset to "show" after content updates 
+       //unless the user explicitly changes it in the form
+            $params['gradetype'] = $hvp->gradetypo == 0 ? GRADE_TYPE_NONE : GRADE_TYPE_VALUE;
     }
     //----end of hack
 
@@ -446,6 +446,9 @@ function hvp_grade_item_update($hvp, $grades=null) {
         $params['reset'] = true;
         $grades = null;
     }
+    error_log('huh: ' . print_r($hvp->gradetypo, true));
+    error_log('gradetype: ' . print_r($params['gradetype'], true));
+
 
     return grade_update('mod/hvp', $hvp->course, 'mod', 'hvp', $hvp->id, 0, $grades, $params);
 }
