@@ -68,7 +68,9 @@ function hvp_supports($feature) {
             return true;
         case FEATURE_SHOW_DESCRIPTION:
             return true;
-
+		case FEATURE_MOD_PURPOSE:
+		    return MOD_PURPOSE_CONTENT;
+		
         default:
             return null;
     }
@@ -411,16 +413,16 @@ function hvp_grade_item_update($hvp, $grades=null) {
     }
 
     $params = array('itemname' => $hvp->name, 'idnumber' => $hvp->cmidnumber);
-
-    //dapiawaej
+    
+    //dapiawaej December 2, 2024
     if (isset($hvp->maximumgrade)) { 
         $params['grademax'] = $hvp->maximumgrade;
     }
-   
-    if ( isset($hvp->gradetypo) && $hvp->gradetypo == 0) {
-         $params['gradetype'] = GRADE_TYPE_NONE; 
-    }else {
-        $params['gradetype'] = GRADE_TYPE_VALUE;
+
+    if (isset($hvp->gradetypo)) {
+        //ensures that the grade visibility setting (hide/show) is respected and will not be automatically reset to "show" after content updates 
+       //unless the user explicitly changes it in the form
+            $params['gradetype'] = $hvp->gradetypo == 0 ? GRADE_TYPE_NONE : GRADE_TYPE_VALUE;
     }
     //----end of hack
 
@@ -444,6 +446,9 @@ function hvp_grade_item_update($hvp, $grades=null) {
         $params['reset'] = true;
         $grades = null;
     }
+    error_log('huh: ' . print_r($hvp->gradetypo, true));
+    error_log('gradetype: ' . print_r($params['gradetype'], true));
+
 
     return grade_update('mod/hvp', $hvp->course, 'mod', 'hvp', $hvp->id, 0, $grades, $params);
 }
@@ -545,3 +550,31 @@ function mod_hvp_core_calendar_provide_event_action(calendar_event $event, actio
     );
 }
 
+/* used to display custom icons for each H5P activity type */
+function hvp_get_coursemodule_info($coursemodule) {
+    global $DB, $PAGE;
+
+    $defaulturl = null;
+
+    $info = new cached_cm_info();
+
+    $modtype = $DB->get_field_sql('SELECT main_library_id FROM {hvp} WHERE id = ?', array($coursemodule->instance));
+    $result = $DB->get_record_sql('SELECT has_icon, machine_name, major_version, minor_version FROM {hvp_libraries} WHERE id = ?', array($modtype));
+
+    if ($result->has_icon) {
+        $info->iconurl = new moodle_url('/theme/urcourses_default/pix_plugins/mod/hvp/types/'.substr($result->machine_name,4).'/icon.svg');
+    } else {
+        $result2 = $DB->get_record_sql('SELECT has_icon, machine_name, major_version, minor_version FROM {hvp_libraries} WHERE has_icon = ? AND machine_name = ?', array('1', $result->machine_name));
+        if ($result2) {
+            $info->iconurl = new moodle_url('/theme/urcourses_default/pix_plugins/mod/hvp/types/'.substr($result2->machine_name,4).'/icon.svg');
+            //$PAGE->theme->image_url('types/'.substr($result2->machine_name,4).'/icon','mod_hvp');
+        }
+    }
+
+    if ($info->iconurl === null) {
+        $info->iconurl = $defaulturl;
+    }
+    $info->name = $coursemodule->name;
+
+   return $info;
+}
