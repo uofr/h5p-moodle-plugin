@@ -131,6 +131,26 @@ function hvp_update_instance($hvp) {
     return true;
 }
 
+/**
+ * Retrieves the H5P instance from the course module ID.
+ *
+ * @param int $cmid The course module ID.
+ * @return object|null The H5P instance or null if not found.
+ */
+function mod_hvp_get_instance($cmid) {
+    global $DB;
+
+    // Retrieve the course module record for H5P using the course module ID ($cmid)
+    $cm = get_coursemodule_from_id('hvp', $cmid);
+
+    // Return the instance ID from the course module
+    if ($cm) {
+        return $cm->instance;
+    }
+    
+    return false;  // Return false if no instance is found
+}
+
 
 # Uofr hack dapiawej ------------------------
 function set_grade_item_none($hvp, $grades=null) {
@@ -406,7 +426,7 @@ function hvp_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload
  * @return int, 0 if ok, error code otherwise
  */
 function hvp_grade_item_update($hvp, $grades=null) {
-    global $CFG;
+    global $DB, $CFG;
 
     if (!function_exists('grade_update')) { // Workaround for buggy PHP versions.
         require_once($CFG->libdir . '/gradelib.php');
@@ -418,12 +438,12 @@ function hvp_grade_item_update($hvp, $grades=null) {
     if (isset($hvp->maximumgrade)) { 
         $params['grademax'] = $hvp->maximumgrade;
     }
-
     if (isset($hvp->gradetypo)) {
         //ensures that the grade visibility setting (hide/show) is respected and will not be automatically reset to "show" after content updates 
        //unless the user explicitly changes it in the form
             $params['gradetype'] = $hvp->gradetypo == 0 ? GRADE_TYPE_NONE : GRADE_TYPE_VALUE;
     }
+   
     //----end of hack
 
     // Recalculate rawgrade relative to grademax.
