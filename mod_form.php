@@ -169,20 +169,10 @@ class mod_hvp_mod_form extends moodleform_mod {
      */
 
      private function set_gradetype($content, &$defaultvalues) {
+        
+        // dapiawej December 3,2024
         // Set default maxgrade.
         if (isset($content) && isset($content['id'])
-            && isset($defaultvalues) && isset($defaultvalues['course'])) {
-
-            // Get the gradeitem and set maxgrade.
-            $gradeitem = grade_item::fetch(array(
-                'itemtype' => 'mod',
-                'itemmodule' => 'hvp',
-                'iteminstance' => $content['id'],
-                'courseid' => $defaultvalues['course']
-            ));
-
-            // dapiawej December 3,2024
-            if (isset($content) && isset($content['id'])
             && isset($defaultvalues) && isset($defaultvalues['course'])) {
     
             // Fetch the grade item for the H5P module instance.
@@ -198,13 +188,13 @@ class mod_hvp_mod_form extends moodleform_mod {
                 $defaultvalues['gradetypo'] = $gradeitem->gradetype; // Use gradetype value.
             } else {
                 // If no grade item exists, set a fallback default value (e.g., 0 or 1).
-                $defaultvalues['gradetypo'] = 0; // Default to 'None' or hidden.
+                $defaultvalues['gradetypo'] = 0; 
             }
             
         }
            ///----------end of hack
 
-        }
+        
     }
 
     private function set_max_grade($content, &$defaultvalues) {
