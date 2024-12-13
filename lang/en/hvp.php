@@ -108,6 +108,8 @@ $string['enabledlrscontenttypes_help'] = 'Makes it possible to use content types
 $string['contenttypecacheheader'] = 'Content Type Cache';
 $string['settings'] = 'H5P Settings';
 $string['libraries'] = 'H5P Libraries';
+$string['attemptsreport'] = 'Attempts report';
+
 
 // Content type cache section.
 $string['ctcacheconnectionfailed'] = "Couldn't communicate with the H5P Hub. Please try again later.";
@@ -608,3 +610,4 @@ $string['emailaddressdescription'] = 'The email address will be used by H5P to r
 $string['copyrightwarning'] = 'Copyrighted material cannot be shared in the H5P Content Hub. If the content is licensed with a OER friendly license like Creative Commons, please choose the appropriate license. If not this content cannot be shared.';
 $string['keywordsexists'] = 'Keywords already exists!';
 $string['somekeywordsexists'] = 'Some of these keywords already exist';
+
