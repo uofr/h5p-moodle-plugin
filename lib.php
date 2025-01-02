@@ -94,7 +94,7 @@ function hvp_add_instance($hvp) {
     // Set and create grade item.
     hvp_save_content($hvp);
     hvp_grade_item_update($hvp);
-    // set_grade_item_none($hvp);
+    hvp_set_grade_visibility($hvp);
 
     if (class_exists('\core_completion\api')) {
         $completiontimeexpected = !empty($hvp->completionexpected) ? $hvp->completionexpected : null;
@@ -121,7 +121,7 @@ function hvp_update_instance($hvp) {
     // Save content.
     hvp_save_content($hvp);
     hvp_grade_item_update($hvp);
-    // set_grade_item_none($hvp);
+    hvp_set_grade_visibility($hvp);
   
     if (class_exists('\core_completion\api')) {
         $completiontimeexpected = !empty($hvp->completionexpected) ? $hvp->completionexpected : null;
@@ -131,24 +131,40 @@ function hvp_update_instance($hvp) {
     return true;
 }
 
-
-# Uofr hack dapiawej ------------------------
-function set_grade_item_none($hvp, $grades=null) {
+/**
+ * Create/update gradebook visibility for given hvp
+ * Joel Dapiawen, December 4, 2024
+ * @param stdClass $hvp object with extra cmidnumber
+ * @param mixed $grades Optional array/object of grade(s); 'reset' means reset grades in gradebook
+ * @return int, 0 if ok, error code otherwise
+ */
+function hvp_set_grade_visibility($hvp, $grades = null) {
     global $CFG;
-    $item = [];
-    $item['gradetype'] = GRADE_TYPE_NONE;
-        
-           if (!function_exists('grade_update')) { // Workaround for buggy PHP versions.
-            require_once($CFG->libdir . '/gradelib.php');
-           }
 
-           if ($grades === 'reset') {
-            $params['reset'] = true;
-            $grades = null;
-        }
-        return grade_update('mod/hvp', $hvp->course, 'mod', 'hvp',$hvp->id, 0,$grades, $item);
+    // Ensure grade params are set.
+    $item = [];
+
+    // Check if gradetypo is set in the form or instance.
+    if (isset($hvp->gradetypo)) {
+        // Set the gradetype to 0, 1.
+        $item['gradetype'] = $hvp->gradetypo == 0 ? GRADE_TYPE_NONE : GRADE_TYPE_VALUE;
+    }
+
+    //set hidden field
+    $item['grade_hidden'] = 1;
+
+    // Update grade item using Moodle's grade API.
+    return grade_update(
+        'mod/hvp',       // Component.
+        $hvp->course,    // Course ID.
+        'mod',           // Item type.
+        'hvp',           // Item module.
+        $hvp->id,        // Instance ID.
+        0,               // Item number (0 by default for single grade items).
+        $grades,         // Grades (if provided).
+        $item            // Additional grade item parameters.
+    );
 }
-// end of hack ----------------------
 
 /**
  * Does the actual process of saving the H5P content that's submitted through
@@ -397,6 +413,8 @@ function hvp_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload
     return true;
 }
 
+
+
 /**
  * Create/update grade item for given hvp
  *
@@ -405,39 +423,46 @@ function hvp_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload
  * @param mixed $grades Optional array/object of grade(s); 'reset' means reset grades in gradebook
  * @return int, 0 if ok, error code otherwise
  */
-function hvp_grade_item_update($hvp, $grades=null) {
-    global $CFG;
+function hvp_grade_item_update($hvp, $grades = null) {
+    global $DB, $CFG;
 
     if (!function_exists('grade_update')) { // Workaround for buggy PHP versions.
         require_once($CFG->libdir . '/gradelib.php');
     }
 
-    $params = array('itemname' => $hvp->name, 'idnumber' => $hvp->cmidnumber);
+    $params = [
+        'itemname' => $hvp->name,
+        'idnumber' => $hvp->cmidnumber,
+    ];
 
-    //dapiawaej
-    if (isset($hvp->maximumgrade)) { 
-        $params['grademax'] = $hvp->maximumgrade;
-    }
-   
-    if ( isset($hvp->gradetypo) && $hvp->gradetypo == 0) {
-         $params['gradetype'] = GRADE_TYPE_NONE; 
-    }else {
-        $params['gradetype'] = GRADE_TYPE_VALUE;
-    }
-    //----end of hack
+    // Initialize the flag to determine whether to skip certain blocks.
+    $skipRevert = false;
 
-    // Recalculate rawgrade relative to grademax.
+    // Fetch the grade item for this activity.
+    $gradeitem = grade_item::fetch([
+        'itemtype' => 'mod',
+        'itemmodule' => 'hvp',
+        'iteminstance' => $hvp->id,
+        'courseid' => $hvp->course,
+    ]);
+
+    if ($gradeitem) {
+        // If gradetype is GRADE_TYPE_VALUE, set the flag to skip further modifications.
+        if ($gradeitem->gradetype == GRADE_TYPE_VALUE) {
+            $skipRevert = true; // Set the flag to skip revert.
+        }
+
+        // Temporarily change gradetype if it is GRADE_TYPE_NONE and flag isn't set.
+        if ($gradeitem->gradetype == GRADE_TYPE_NONE && !$skipRevert) {
+            error_log('Temporarily changing gradetype to GRADE_TYPE_VALUE');
+            $gradeitem->gradetype = GRADE_TYPE_VALUE;
+            $gradeitem->update();
+        }
+    }
+
+    // Recalculate rawgrade relative to grademax if needed.
     if (isset($hvp->rawgrade) && isset($hvp->rawgrademax) && $hvp->rawgrademax != 0) {
-        // Get max grade Obs: do not try to use grade_get_grades because it
-        // requires context which we don't have inside an ajax.
-        $gradeitem = grade_item::fetch(array(
-            'itemtype' => 'mod',
-            'itemmodule' => 'hvp',
-            'iteminstance' => $hvp->id,
-            'courseid' => $hvp->course
-        ));
-
-        if (isset($gradeitem) && isset($gradeitem->grademax)) {
+        if ($gradeitem && isset($gradeitem->grademax)) {
             $grades->rawgrade = ($hvp->rawgrade / $hvp->rawgrademax) * $gradeitem->grademax;
         }
     }
@@ -447,8 +472,20 @@ function hvp_grade_item_update($hvp, $grades=null) {
         $grades = null;
     }
 
-    return grade_update('mod/hvp', $hvp->course, 'mod', 'hvp', $hvp->id, 0, $grades, $params);
+    // Update the grades.
+    $result = grade_update('mod/hvp', $hvp->course, 'mod', 'hvp', $hvp->id, 0, $grades, $params);
+
+    // Skip reverting gradetype if the flag is set.
+    if (!$skipRevert && $gradeitem && $gradeitem->gradetype == GRADE_TYPE_VALUE) {
+        error_log('Reverting gradetype back to GRADE_TYPE_NONE');
+        $gradeitem->gradetype = GRADE_TYPE_NONE;
+        $gradeitem->update();
+    }
+
+    return $result;
 }
+
+
 
 /**
  * Update activity grades
@@ -575,3 +612,47 @@ function hvp_get_coursemodule_info($coursemodule) {
 
    return $info;
 }
+
+/**
+ * Extends the settings navigation with the HVP activity settings.
+ *
+ * This function is called when the context for the page is an HVP activity. This is not called by AJAX,
+ * so it is safe to rely on the $PAGE.
+ *
+ * @param settings_navigation $settingsnav The settings navigation object.
+ * @param navigation_node $hvpactivitynode The node to add module settings to.
+ */
+
+ function hvp_extend_settings_navigation(settings_navigation $settings, navigation_node $hvpactivitynode) {
+    global $PAGE;
+
+  //Students are not allowed to view the results
+    if (has_capability('mod/hvp:viewallresults', $settings->get_page()->cm->context)) {
+        // Define the URL for the attempts report tab
+        $resultsurl = new moodle_url('/mod/hvp/grade.php', ['id' => $PAGE->cm->id]);
+
+        // Add the new "Attempts Report" tab with a unique key ('results').
+        $hvpactivitynode->add(
+            get_string('attemptsreport', 'mod_hvp'),
+            $resultsurl,
+            navigation_node::TYPE_SETTING, 
+            null,
+            'results'
+        );
+    }
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
