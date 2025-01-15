@@ -169,33 +169,32 @@ class mod_hvp_mod_form extends moodleform_mod {
      */
 
      private function set_gradetype($content, &$defaultvalues) {
+        
+        // dapiawej December 3,2024
         // Set default maxgrade.
         if (isset($content) && isset($content['id'])
             && isset($defaultvalues) && isset($defaultvalues['course'])) {
-
-            // Get the gradeitem and set maxgrade.
+    
+            // Fetch the grade item for the H5P module instance.
             $gradeitem = grade_item::fetch(array(
                 'itemtype' => 'mod',
                 'itemmodule' => 'hvp',
                 'iteminstance' => $content['id'],
                 'courseid' => $defaultvalues['course']
             ));
-
+    
+            // Check if a grade item exists and set the gradetype in the default values.
             if (isset($gradeitem) && isset($gradeitem->grademax)) {
-                /*option for checkbox forms if enabled
-                if ($gradeitem->gradetype == 0) {
-                    feature for checkbox
-                    $defaultvalues['gradetypo'] = 1;
-                }else {
-                    $defaultvalues['gradetypo'] = 0;
-                }*/
-                
-                $defaultvalues['gradetypo'] = $gradeitem->gradetype;
-                
+                $defaultvalues['gradetypo'] = $gradeitem->gradetype; // Use gradetype value.
+            } else {
+                // If no grade item exists, set a fallback default value (e.g., 0 or 1).
+                $defaultvalues['gradetypo'] = 0; 
             }
-           
-
+            
         }
+           ///----------end of hack
+
+        
     }
 
     private function set_max_grade($content, &$defaultvalues) {
