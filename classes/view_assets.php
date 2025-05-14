@@ -313,6 +313,10 @@ class view_assets {
      * Outputs h5p view
      */
     public function outputview() {
+        $darkmodeclass = get_user_preferences('theme_urcourses_default_darkmode', false)
+            ? 'darkmode'
+            : '';
+
         if ($this->embedtype === 'div') {
             echo "<div class=\"h5p-content\" data-content-id=\"{$this->content['id']}\"></div>";
         } else {
@@ -327,6 +331,7 @@ class view_assets {
                  "<iframe id=\"h5p-iframe-{$this->content['id']}\"" .
                  " class=\"h5p-iframe\"" .
                  " data-content-id=\"{$this->content['id']}\"" .
+                 " data-darkmodeclass=\"{$darkmodeclass}\"" .
                  " style=\"height:1px\"" .
                  " src=\"about:blank\"" .
                  " frameBorder=\"0\"" .
