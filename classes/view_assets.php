@@ -317,6 +317,9 @@ class view_assets {
             ? 'darkmode'
             : '';
 
+        $courseid = $this->course->id;
+        $categoryid = $this->course->category;
+
         if ($this->embedtype === 'div') {
             echo "<div class=\"h5p-content\" data-content-id=\"{$this->content['id']}\"></div>";
         } else {
@@ -332,6 +335,8 @@ class view_assets {
                  " class=\"h5p-iframe\"" .
                  " data-content-id=\"{$this->content['id']}\"" .
                  " data-darkmodeclass=\"{$darkmodeclass}\"" .
+                 " data-courseid=\"courseid-{$courseid}\"" .
+                 " data-categoryid=\"categoryid-{$categoryid}\"" .
                  " style=\"height:1px\"" .
                  " src=\"about:blank\"" .
                  " frameBorder=\"0\"" .
