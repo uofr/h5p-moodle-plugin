@@ -425,14 +425,15 @@ function hvp_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload
  */
 function hvp_grade_item_update($hvp, $grades = null) {
     global $DB, $CFG;
-
+    
     if (!function_exists('grade_update')) { // Workaround for buggy PHP versions.
         require_once($CFG->libdir . '/gradelib.php');
     }
 
     $params = [
         'itemname' => $hvp->name,
-        'idnumber' => $hvp->cmidnumber,
+        'idnumber' => '',
+      
     ];
 
     // Initialize the flag to determine whether to skip certain blocks.
@@ -471,6 +472,15 @@ function hvp_grade_item_update($hvp, $grades = null) {
         $params['reset'] = true;
         $grades = null;
     }
+    if (isset($hvp->maximumgrade)) {
+        $params['grademax'] = $hvp->maximumgrade;
+        
+        //Update directly on the grade item object
+        if ($gradeitem) {
+            $gradeitem->grademax = $hvp->maximumgrade;
+            $gradeitem->update(); // Apply the change immediately
+        }
+    }
 
     // Update the grades.
     $result = grade_update('mod/hvp', $hvp->course, 'mod', 'hvp', $hvp->id, 0, $grades, $params);
@@ -481,7 +491,8 @@ function hvp_grade_item_update($hvp, $grades = null) {
         $gradeitem->gradetype = GRADE_TYPE_NONE;
         $gradeitem->update();
     }
-
+  
+    
     return $result;
 }
 
